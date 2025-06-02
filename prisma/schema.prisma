@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum OTPTYPE {
+  SIGNUP_VERIFICATION
+  RESET_PASSWORD
+}
+
+enum USERROLE {
+  ATHELETE
+  COACH
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  role       USERROLE
+  email      String   @unique
+  password   String
+  isVerified Boolean  @default(false)
+}
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  code      Int
+  email     String
+  otp_type  OTPTYPE  @default(SIGNUP_VERIFICATION)
+  expireAt  DateTime
+  createdAt DateTime @default(now())
+}
+
+//User created
