@@ -16,6 +16,8 @@ app.get("/health-check",(req,res,next)=>{
 })
 
 app.use("/api/v1",rootRouter)
+
+
 app.use(globalMiddleware)
 
 

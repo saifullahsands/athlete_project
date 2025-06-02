@@ -23,12 +23,20 @@ enum USERROLE {
   COACH
 }
 
+enum genderEnum {
+  FEMALE
+  MALE
+}
+
 model User {
-  id         Int      @id @default(autoincrement())
-  role       USERROLE
-  email      String   @unique
-  password   String
-  isVerified Boolean  @default(false)
+  id                Int           @id @default(autoincrement())
+  role              USERROLE
+  email             String        @unique
+  password          String
+  isVerified        Boolean       @default(false)
+  isProfileComplete Boolean       @default(false)
+  user_details      User_Details? @relation("UserToDetails")
+  sport             Sport[]
 }
 
 model Otp {
@@ -40,4 +48,46 @@ model Otp {
   createdAt DateTime @default(now())
 }
 
-//User created
+model User_Details {
+  userId       Int        @id
+  user         User       @relation(fields: [userId], references: [id], name: "UserToDetails")
+  first_name   String
+  last_name    String
+  DOB          DateTime @db.Date
+  gender       genderEnum
+  height       Height?    @relation("UserHeight")
+  address      String
+  city         String
+  state        String
+  phone        String
+  emailAddress String
+  education    Education? @relation("Educations")
+}
+
+model Height {
+  id           Int          @id @default(autoincrement())
+  ft           Decimal      @db.Decimal(3, 2)
+  inches       Decimal      @db.Decimal(3, 2)
+  weight       Decimal      @db.Decimal(3, 2)
+  userDetailId Int          @unique
+  user_detail  User_Details @relation(references: [userId], fields: [userDetailId], name: "UserHeight")
+}
+
+model Education {
+  id             Int           @id @default(autoincrement())
+  school_name    String
+  GPA            Decimal       @db.Decimal(3, 3)
+  graduated_year DateTime @db.Date
+  about          String
+  userDetailId   Int           @unique
+  user_detail    User_Details? @relation(fields: [userDetailId], references: [userId], name: "Educations")
+}
+
+model Sport {
+  id           Int           @id @default(autoincrement())
+  name         String
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+}
+
+

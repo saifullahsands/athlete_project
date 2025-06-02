@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const {PASSWORD,EMAIL }=require("../config/env.config")
+const {PASSWORD,EMAIL }=require("../../config/env.config")
 
 const smtpServer=async(toEmail,otp)=>{
     const transport=nodemailer.createTransport({

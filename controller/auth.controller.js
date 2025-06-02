@@ -1,14 +1,10 @@
-
-// const  prisma=require("../lib/prismaClient")
-const { generateOtp } = require("../utils/generateOtp")
-const { smtpServer } = require("../utils/sendEmail")
-const prisma = require("../lib/prismaClient")
-const { okResponse } = require("../utils/handleError")
+const prisma = require("../lib/prismaClient");
+const { okResponse, smtpServer, generateOtp,HashingPassword,generateToken,ComparePassword } = require("../utils/index");
 
 //SIGNUP
 const registerUser = async (req, res, next) => {
     try {
-        const { email } = req.body;
+        const { email} = req.body;
         const checkingEmail = await prisma.user.findUnique({
             where: { email }
         })
@@ -32,7 +28,7 @@ const registerUser = async (req, res, next) => {
         next(error)
     }
 }
-
+ 
 //SIGNUP_VERIFICATION
 //RESET_PASSWORD
 const resendOtp = async (req, res, next) => {
@@ -62,16 +58,18 @@ const resendOtp = async (req, res, next) => {
 
 const verifyOtp = async (req, res, next) => {
     try {
-        const { email,password, otp } = req.body;
+        const { email, password, otp ,role} = req.body;
         const verifyOtp = await prisma.otp.findFirst({
             where: {
                 email,
-                code:parseInt(otp)
+                code: parseInt(otp)
             },
             orderBy: {
                 createdAt: 'desc'
             }
         })
+
+        const hashPassword=await HashingPassword(password)
         if (!verifyOtp) {
             throw new Error("Invalid otp")
         }
@@ -81,17 +79,20 @@ const verifyOtp = async (req, res, next) => {
         if (verifyOtp.otp_type === "SIGNUP_VERIFICATION") {
             const existingUser = await prisma.user.findUnique({ where: { email } })
             if (!existingUser) {
-                await prisma.user.create({
+                const user=await prisma.user.create({
                     data: {
                         email,
-                        password: password,
-                        role: "ATHELETE",
+                        password: hashPassword,
+                        role,
                         isVerified: true
                     }
                 })
+                delete user.password
+                const token=await generateToken(user.id)
+                okResponse(res,200,"user is verified successfully",user,token)
             }
             else if (!existingUser.isVerified) {
-                await prisma.user.update({
+              const user=  await prisma.user.update({
                     where: {
                         email
                     },
@@ -99,21 +100,86 @@ const verifyOtp = async (req, res, next) => {
                         isVerified: true
                     }
                 })
+                delete user.password
+                const token=await generateToken(user.id)
+                okResponse(res,200,"user is verified successfully",user,token)
             }
+
         }
         else {
             throw new Error("user is already veirfied")
         }
-        okResponse(res, 200, "otp is verified", null)
+        
     } catch (error) {
         console.log("error in  verify otp  ", error.message)
         next(error)
     }
 }
 
+const CreateNewPassword = async (req, res, next) => {
+    try {
+        const { email, newPassword, otp } = req.body;
+        let user = await prisma.user.findUnique({
+            where: { email }
+        })
+        if (!user) {
+            throw new Error('user is not exist')
+        }
 
+        const existingOtp = await prisma.otp.findFirst({
+            where: {
+                email,
+                code: parseInt(otp)
+            },
+            orderBy: {
+                createdAt: "desc"
+            }
+        })
+        if (Date.now() > new Date(existingOtp.expireAt).getTime()) {
+            throw new Error("otp is expired")
+        }
+        const updateUserPassword = await prisma.user.update({
+            where: {
+                id: user.id
+            },
+            data: {
+                password: newPassword
+            }
+        })
+        okResponse(res, 200, "changed password successfully", updateUserPassword)
+    } catch (error) {
+        console.log(`error in create new Password :: ${error.message}`)
+        next(error)
+    }
+}
+
+const login=async(req,res,next)=>{
+    try {
+        const {email,password}=req.body;
+        let user=await prisma.user.findUnique({
+            where:{
+                email
+            }
+        })
+        if(!user){
+            throw new Error("user is not exist")
+        }
+        const matchedPassword=await ComparePassword(password,user.password)
+        if(!matchedPassword){
+            throw new Error("invalid credientials")
+        }
+        const token = await generateToken(user.id)
+        delete user.password
+        okResponse(res,200,"user Logged in successfully ",user,token)
+    } catch (error) {
+        console.log("error in login :: ",error.message)
+        next(error)
+    }
+}
 module.exports = {
-   registerUser,
-   resendOtp,
-   verifyOtp
+    registerUser,
+    resendOtp,
+    verifyOtp,
+    CreateNewPassword,
+    login
 }
