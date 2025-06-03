@@ -1,126 +1,134 @@
-const prisma = require("../lib/prismaClient")
-const { okResponse } = require("../utils/index")
-
+const prisma = require("../lib/prismaClient");
+const { okResponse } = require("../utils/index");
+const {
+  createEducation,
+  createHeight,
+  createdUserDetails,
+  getUserDetailsWithExtras,
+  updateUserIsProfileCompleted,
+  gettingUserDetailWithHeightAndEducation,
+  postAchievment,
+} = require("../services/userDetail.service");
 
 const fillUserDetails = async (req, res, next) => {
-try {
-        const userId = req.user?.id
-        const { first_name, last_name, DOB, gender, height, address, city, state, phone, emailAddress, education } = req.body
-        let user = await prisma.user.findUnique({
-            where: {
-                id: parseInt(userId)
-            }
-        })
+  try {
+    const userId = req.user.id;
+    // console.log("user Id is here :: ", userId);
+    const {
+      achievements,
+      first_name,
+      last_name,
+      DOB,
+      gender,
+      height,
+      address,
+      city,
+      state,
+      phone,
+      emailAddress,
+      education,
+    } = req.body;
 
-         const userDetail = await prisma.user_Details.create({
-            data: {
-                first_name,
-                last_name,
-                DOB: new Date(DOB),
-                gender,
-                address,
-                city,
-                state,
-                phone,
-                emailAddress,
-                userId: parseInt(userId)
-            },
-          
-        })
+    const userDetailing = await createdUserDetails({
+      first_name,
+      last_name,
+      DOB,
+      gender,
+      address,
+      city,
+      state,
+      phone,
+      emailAddress,
+      userId,
+    });
 
-        const newHeight = await prisma.height.create({
-            data: {
-                ft: height.ft || null,
-                inches: height.inches || null,
-                weight: height.weight || null,
-                userDetailId: userDetail.userId
-            }
+    await createHeight({
+      ft: height?.ft,
+      inches: height?.inches,
+      weight: height?.weight,
+      userDetailId: userDetailing.userId,
+    });
+
+    await createEducation({
+      school_name: education?.school_name,
+      GPA: education?.GPA,
+      graduated_year: education?.graduated_year,
+      about: education?.about,
+      userDetailId: userDetailing.userId,
+    });
+
+   const achievment= await Promise.all(
+      achievements.map(({ name, year }) => 
+        postAchievment({
+          nameOfAchievemnt: name,
+          yearOfAcheivment: year,
+          UserId: userId,
         })
+      )
+    );
+    console.log("achievment :: ",achievment)
     
-        const newEducation = await prisma.education.create({
-            data: {
-                school_name: education.school_name || null,
-                GPA: education.GPA || null,
-                graduated_year: new Date(education.graduated_year) || null,
-                about: education.about || null,
-                userDetailId:userDetail.userId
-            }
-        })
-    
-       
-    const fillUserDetailing=await prisma.user_Details.findFirst({
-        where:{
-            userId:userDetail.userId
-        },
-        include:{
-            height:true,
-            education:true
-        }
-    })
-        await prisma.user.update({
-            where: {
-                id: user.id
-            },
-            data: {
-                isProfileComplete: true
-            }
-        })
-        okResponse(res, 200, "user details filled successfully", fillUserDetailing)
-} catch (error) {
-    console.log(`error in fill user details :: ${error.message}`)
-    next(error)
-}
-}
 
+    await updateUserIsProfileCompleted(userId);
+    okResponse(res, 200, "user details filled successfully");
+  } catch (error) {
+    console.log(`error in fill user details :: ${error.message}`);
+    next(error);
+  }
+};
 
 const getUserDetails = async (req, res, next) => {
   try {
-      const userId = req.user.id
-       const userDetail = await prisma.user.findFirst({
-          where: {
-              id: parseInt(userId)
-          },
-          include: {
-              user_details:{
-                  include:{
-                      height:true,
-                      education:true
-                  }
-              },
-              
-          },
-          
-      })
-      delete userDetail.password
-      okResponse(res,200,"get user Details successfully ",userDetail)
+    const userId = req.user.id;
+    const userDetail = await gettingUserDetailWithHeightAndEducation(userId);
+    delete userDetail.password;
+    okResponse(res, 200, "get user Details successfully ", userDetail);
   } catch (error) {
-    console.log(`error in get user Details :: ${error.message}`)
-    next(error)
+    console.log(`error in get user Details :: ${error.message}`);
+    next(error);
   }
-}
+};
 
+const updateUserDetails = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { first_name, last_name } = req.body;
+    const userDetailing = await prisma.user_Details.update({
+      where: {
+        userId: parseInt(userId),
+      },
+      data: {
+        last_name: last_name,
+        first_name: first_name,
+      },
+    });
+    okResponse(res, 200, "user updated successfully ", userDetailing);
+  } catch (error) {
+    console.log("error in update User detailing :: ", error.message);
+    next(error);
+  }
+};
 
-const updateUserDetails=async(req,res,next)=>{
+const uploadAchievment=async(req,res,next)=>{
     try {
         const userId=req.user.id
-        const { first_name,last_name}=req.body;
-        const userDetailing=await prisma.user_Details.update({
-            where:{
-                userId:parseInt(userId)
-            },
-            data:{
-                last_name:last_name,
-                first_name:first_name
-            }
+        const {achievements}=req.body;
+        const achieve=await Promise.all(achievements.map(({name,year})=>
+        postAchievment({
+            nameOfAchievemnt:name,
+            yearOfAcheivment:year,
+            UserId:userId
         })
-        okResponse(res,200,"user updated successfully ",userDetailing)
+        ))
+        okResponse(res,200,"all achievement ",achieve)
     } catch (error) {
-        console.log("error in update User detailing :: ",error.message)
+        console.log(`error in upload achievments :: ${error.message}`)
         next(error)
     }
 }
-module.exports={
-    getUserDetails,
-    fillUserDetails,
-    updateUserDetails
-}
+module.exports = {
+  getUserDetails,
+  fillUserDetails,
+  updateUserDetails,
+  uploadAchievment
+};

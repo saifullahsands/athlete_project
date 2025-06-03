@@ -1,34 +1,26 @@
-const prisma = require("../lib/prismaClient");
-const { okResponse, smtpServer, generateOtp,HashingPassword,generateToken,ComparePassword } = require("../utils/index");
 
+const prisma = require("../lib/prismaClient");
+const { okResponse, smtpServer, generateOtp, HashingPassword, generateToken, ComparePassword } = require("../utils/index");
+const { findUserByEmail, createOtp, findOtp, updateUserPassword, deleteOtp, createUser } = require("../services/auth.service");
+const { BadRequestError } = require("../utils/continous/handleError");
 //SIGNUP
 const registerUser = async (req, res, next) => {
     try {
-        const { email} = req.body;
-        const checkingEmail = await prisma.user.findUnique({
-            where: { email }
-        })
+        const { email } = req.body;
+        const checkingEmail = await findUserByEmail(email)
         if (checkingEmail) {
-            throw new Error("user is already exist")
+            return BadRequestError(res,"user is not Found")
         }
         const otp = generateOtp()
         await smtpServer(email, otp)
-        const expireTime = new Date(Date.now() + 5 * 60 * 1000) //10 min
-        const dbOtp = await prisma.otp.create({
-            data: {
-                email,
-                code: otp,
-                expireAt: expireTime,
-                otp_type: "SIGNUP_VERIFICATION"
-            }
-        })
+        const dbOtp = await createOtp({ email, otp, otpType: "SIGNUP_VERIFICATION" })
         okResponse(res, 201, "otp send your email ", dbOtp.code)
     } catch (error) {
         console.log("error in register user", error.message)
         next(error)
     }
 }
- 
+
 //SIGNUP_VERIFICATION
 //RESET_PASSWORD
 const resendOtp = async (req, res, next) => {
@@ -36,21 +28,13 @@ const resendOtp = async (req, res, next) => {
         const { email, type } = req.body;
         const otp = generateOtp()
         await smtpServer(email, otp)
-        const expireTime = new Date(Date.now() + 5 * 60 * 1000)
-
-
-        const resendOtpForVerification = await prisma.otp.create({
-            data: {
-                email,
-                code: otp,
-                expireAt: expireTime,
-                otp_type: type
-            }
-        })
+        
+        const resendOtpForVerification = await createOtp({email,otp,otpType:type})
         const message = type === "SIGNUP_VERIFICATION" ? "resend otp for verification" : "resend otp for forget password"
         okResponse(res, 200, message, resendOtpForVerification.code)
     }
     catch (error) {
+        console.log(`error in resend otp`)
         next(error);
     }
 }
@@ -58,41 +42,28 @@ const resendOtp = async (req, res, next) => {
 
 const verifyOtp = async (req, res, next) => {
     try {
-        const { email, password, otp ,role} = req.body;
-        const verifyOtp = await prisma.otp.findFirst({
-            where: {
-                email,
-                code: parseInt(otp)
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
-        })
-
-        const hashPassword=await HashingPassword(password)
+        const { email, password, otp, role } = req.body;
+        const verifyOtp = await findOtp(email,otp)
+        // console.log("email is verifyOtp",verifyOtp.email)
+        // const hashPassword=await HashingPassword(password)
+        // if(verifyOtp.email !==email){
+        //     return BadRequestError(res,"email is invalid")
+        // }
         if (!verifyOtp) {
-            throw new Error("Invalid otp")
+            return BadRequestError(res,"otp is invalid or email is invalid")
         }
         if (Date.now() > new Date(verifyOtp.expireAt).getTime()) {
             throw new Error("Otp is expired")
         }
         if (verifyOtp.otp_type === "SIGNUP_VERIFICATION") {
-            const existingUser = await prisma.user.findUnique({ where: { email } })
+            const existingUser = await findUserByEmail(email)
             if (!existingUser) {
-                const user=await prisma.user.create({
-                    data: {
-                        email,
-                        password: hashPassword,
-                        role,
-                        isVerified: true
-                    }
-                })
-                delete user.password
-                const token=await generateToken(user.id)
-                okResponse(res,200,"user is verified successfully",user,token)
+                const user = await createUser({email,password,role})
+
+                return okResponse(res, 200, "user is verified successfully", user)
             }
             else if (!existingUser.isVerified) {
-              const user=  await prisma.user.update({
+                const user = await prisma.user.update({
                     where: {
                         email
                     },
@@ -100,79 +71,81 @@ const verifyOtp = async (req, res, next) => {
                         isVerified: true
                     }
                 })
-                delete user.password
-                const token=await generateToken(user.id)
-                okResponse(res,200,"user is verified successfully",user,token)
+
+                // const token=await generateToken(user.id)
+                return okResponse(res, 200, "user is verified successfully", user)
+            }
+            else {
+                throw new Error("user is already veirfied")
             }
 
         }
-        else {
-            throw new Error("user is already veirfied")
-        }
-        
+
+
+
+        throw new Error("Unhandled OTP type");
     } catch (error) {
         console.log("error in  verify otp  ", error.message)
         next(error)
     }
 }
 
-const CreateNewPassword = async (req, res, next) => {
+const SendOtpforgetPassword = async (req, res, next) => {
     try {
-        const { email, newPassword, otp } = req.body;
-        let user = await prisma.user.findUnique({
-            where: { email }
-        })
+        const { email } = req.body;
+        const user = await findUserByEmail(email)
         if (!user) {
-            throw new Error('user is not exist')
+            return BadRequestError(res,"user is not Exist !!")
         }
-
-        const existingOtp = await prisma.otp.findFirst({
-            where: {
-                email,
-                code: parseInt(otp)
-            },
-            orderBy: {
-                createdAt: "desc"
-            }
-        })
-        if (Date.now() > new Date(existingOtp.expireAt).getTime()) {
-            throw new Error("otp is expired")
-        }
-        const updateUserPassword = await prisma.user.update({
-            where: {
-                id: user.id
-            },
-            data: {
-                password: newPassword
-            }
-        })
-        okResponse(res, 200, "changed password successfully", updateUserPassword)
+        const otp = generateOtp()
+        await smtpServer(email, otp)
+        const dbOtp = await createOtp({ email, otp, otpType: "RESET_PASSWORD" })
+        okResponse(res, 200, "send otp successfully ", dbOtp.code)
     } catch (error) {
-        console.log(`error in create new Password :: ${error.message}`)
+        console.log(`error in send otp for forget password :: ${error.message}`)
         next(error)
     }
 }
 
-const login=async(req,res,next)=>{
+const verifyOtpAndsetNewPassword = async (req, res, next) => {
     try {
-        const {email,password}=req.body;
-        let user=await prisma.user.findUnique({
-            where:{
-                email
-            }
-        })
-        if(!user){
+        const { email, otp, newPassword } = req.body;
+        const user = await findUserByEmail(email)
+        if (!user) {
             throw new Error("user is not exist")
         }
-        const matchedPassword=await ComparePassword(password,user.password)
-        if(!matchedPassword){
-            throw new Error("invalid credientials")
+        const verifyOtp = await findOtp(email, otp)
+        if (!verifyOtp) {
+            throw new Error("invalid otp")
         }
-        const token = await generateToken(user.id)
-        delete user.password
-        okResponse(res,200,"user Logged in successfully ",user,token)
+
+        if (Date.now > new Date(verifyOtp.expireAt).getTime()) {
+            await deleteOtp(verifyOtp.id)
+            throw new Error("otp is expired")
+        }
+
+        const userSetNewPassword = await updateUserPassword(user.id, newPassword)
+        await deleteOtp(verifyOtp.id)
+        okResponse(res, 200, "sett new password successfully !!", userSetNewPassword)
+
     } catch (error) {
-        console.log("error in login :: ",error.message)
+        console.log(`error in setNewPassword and verify otp ${error.message}`)
+        next(error)
+    }
+}
+
+const login = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+        let user = await findUserByEmail(email)
+        if (!user) {
+           BadRequestError(res,"user is not exist !! ")
+        }
+        
+        const token = await generateToken(user.id)
+      okResponse(res, 200, "user Logged in successfully ", user, token)
+    } catch (error) {
+        console.log("error in login :: ", error.message)
         next(error)
     }
 }
@@ -180,6 +153,7 @@ module.exports = {
     registerUser,
     resendOtp,
     verifyOtp,
-    CreateNewPassword,
-    login
+    SendOtpforgetPassword,
+    login,
+    verifyOtpAndsetNewPassword
 }

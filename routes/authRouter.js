@@ -3,9 +3,10 @@ const authController = require("../controller/auth.controller")
 
 
 authRouter.post("/register", authController.registerUser);
-authRouter.patch("/verify-otp", authController.verifyOtp)
-authRouter.patch("/resend-otp", authController.resendOtp);
-authRouter.patch("/new-password", authController.CreateNewPassword);
+authRouter.put("/verify-otp", authController.verifyOtp)
+authRouter.put("/resend-otp", authController.resendOtp);
+authRouter.put("/send-otp-forget-password", authController.SendOtpforgetPassword);
+authRouter.put("/verify-otp-forget-password", authController.verifyOtpAndsetNewPassword)
 authRouter.post("/login", authController.login);
 
 module.exports = authRouter

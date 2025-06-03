@@ -37,8 +37,18 @@ model User {
   isProfileComplete Boolean       @default(false)
   user_details      User_Details? @relation("UserToDetails")
   sport             Sport[]
+  achievment achievment[] @relation("UserAchievment")
 }
 
+
+model achievment{
+  id Int @id @default(autoincrement())
+  userId Int 
+  user User @relation(references: [id],fields: [userId],name:"UserAchievment")
+  name String
+  Year DateTime @db.Date
+  createdAt DateTime @default(now())
+}
 model Otp {
   id        Int      @id @default(autoincrement())
   code      Int
@@ -87,7 +97,7 @@ model Sport {
   id           Int           @id @default(autoincrement())
   name         String
   userId       Int
-  user         User          @relation(fields: [userId], references: [id])
+  user         User?          @relation(fields: [userId], references: [id])
 }
 
 
