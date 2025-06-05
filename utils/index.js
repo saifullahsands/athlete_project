@@ -1,5 +1,5 @@
 const { generateOtp } = require("./continous/generateOtp");
-const { okResponse, Errorhandler } = require("./continous/handleError");
+const { okResponse, Errorhandler,BadRequestError,validationError, unAuthorized } = require("./continous/handleError");
 const { smtpServer } = require("./continous/sendEmail")
 const { HashingPassword, ComparePassword } = require("./helper/bcryptPassword")
 const { generateToken } = require("./helper/generateToken")
@@ -12,5 +12,8 @@ module.exports = {
     HashingPassword,
     ComparePassword,
     smtpServer,
-    generateToken
+    generateToken,
+    BadRequestError,
+    validationError, 
+    unAuthorized
 }

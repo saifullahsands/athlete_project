@@ -1,6 +1,7 @@
+
 const joi = require("joi");
 
-const athletevalidateSchema = joi.object({
+const CoachvalidateSchema = joi.object({
   query: joi.object().empty(),
   params: joi.object().empty(),
   body: joi.object({
@@ -38,51 +39,38 @@ const athletevalidateSchema = joi.object({
       "string.length": "phone number must be 11 digits",
       "string.pattern.base": "phone number contain only  digits",
     }),
-    ft: joi.number().positive().precision(2).required().messages({
-      "any.required": "ft is required",
-      "number.base": "ft must be a number",
-      "number.positive": "ft number must be a positive",
-    }),
-    inches: joi.number().positive().precision(2).required().messages({
-      "any.required": "inches is required",
-      "number.base": "inches must be a number",
-      "number.positive": "inches number must be a positive",
-    }),
-    weight: joi.number().positive().precision(2).required().messages({
-      "any.required": "weight is required",
-      "number.base": "weight must be a number",
-      "number.positive": "weight number must be a positive",
-    }),
-    school_name: joi.string().required().trim().messages({
-      "any.required": "school name is required",
-    }),
-    GPA: joi.number().positive().precision(2).required().messages({
-      "any.required": "GPA is required",
-      "number.base": "GPA must be a number",
-      "number.positive": "GPA number must be a positive",
-    }),
+    coaching_specialization:joi.string().required().valid("FOOTBALL","CRICKET")
+    .messages({
+      'any.required':"coaching Specialization is required",
+      'any.only':"coaching specialization must be either CRICKET and FOOTBALL",
 
-    graduated_year: joi.date().required().messages({
-      "any.required": "graduated year is required",
-      "date.base": "graduated year must be a valid date",
+    }),
+    coaching_experience:joi.number().required().positive().min(1).messages({
+      'any.required':"experience is required",
+      'number.positive':"experience is must be a positive",
+      'number.min':"experience must be a 1",
     }),
     about: joi.string().required().trim().messages({
       "any.required": "about is required",
     }),
-    previousTeam: joi.string().optional(),
-    currentTeam: joi.string().optional(),
-    coachName: joi.string().optional(),
-    position:joi.string().optional(),
-    achievements: joi
+      work_experience: joi
       .array()
       .items(
         joi.object({
-          name: joi.string().optional(),
-          year: joi.date().optional(),
+          name: joi.string().required()
+          .messages({
+            'any.required':"achievments name is required",
+
+          }),
+          year: joi.date().required().messages({
+            'any.required':"achievment year is required",
+            "date.base":"achievment year must be a date"
+          }),
         })
-      )
-      .optional(),
-  }),
+      ).required().messages({
+        'any.required':"work experience is required"
+      })
+})
 });
 
-module.exports = athletevalidateSchema;
+module.exports = CoachvalidateSchema;

@@ -10,7 +10,11 @@ const createdUserDetails = async ({
   state,
   phone,
   emailAddress,
-  userId
+  coachName,
+  currentTeam,
+  previousTeam,
+  position,
+  userId,
 }) => {
   return prisma.user_Details.create({
     data: {
@@ -23,6 +27,10 @@ const createdUserDetails = async ({
       state,
       phone,
       emailAddress,
+      coachName,
+      currentTeam ,
+      previousTeam ,
+      position,
       userId: parseInt(userId),
     },
   });
@@ -39,20 +47,17 @@ const createHeight = async ({ ft, inches, weight, userDetailId }) => {
   });
 };
 
-
 const createEducation = async ({
   school_name,
   GPA,
   graduated_year,
-  about,
-  userDetailId
+  userDetailId,
 }) => {
   return prisma.education.create({
     data: {
       school_name: school_name || null,
       GPA: GPA || null,
       graduated_year: graduated_year ? new Date(graduated_year) : null,
-      about: about || null,
       userDetailId: parseInt(userDetailId),
     },
   });
@@ -63,59 +68,74 @@ const getUserDetailsWithExtras = async (userId) => {
     where: {
       id: parseInt(userId),
     },
-    
+
     include: {
-        achievment:true,
-        user_details:true,
+      achievment: true,
+      user_details: true,
     },
   });
 };
 
-const updateUserIsProfileCompleted = async (userId) => {
-    return prisma.user.update({
-        where:{
-            id:parseInt(userId)
+const updateUserIsProfileCompleted = async (userId,about) => {
+  return prisma.user.update({
+    where: {
+      id: parseInt(userId),
+    },
+    data: {
+      about,
+      isProfileComplete: true,
+    },
+  });
+};
+
+const gettingUserDetailWithAchievmentHeightAndEducation = async (userId) => {
+  return prisma.user.findUnique({
+    where: {
+      id: parseInt(userId),
+    },
+    include: {
+      achievment: true,
+      user_details: {
+        include: {
+          height: true,
+          education: true,
         },
-        data:{
-            isProfileComplete:true
-        }
-    })
+      },
+    },
+  });
+};
+
+const postAchievment = async ({
+  nameOfAchievemnt,
+  yearOfAcheivment,
+  UserId,
+}) => {
+  return prisma.achievment.createMany({
+    data: {
+      userId: parseInt(UserId),
+      name: nameOfAchievemnt || null,
+      Year: yearOfAcheivment ? new Date(yearOfAcheivment) : null,
+    },
+  });
 };
 
 
 
-const gettingUserDetailWithHeightAndEducation=async(userId)=>{
-    return prisma.user.findUnique({
-        where:{
-            id:parseInt(userId)
-        },
-        include:{
-            achievment:true,
-            user_details:{
-                include:{
-                    height:true,
-                    education:true
-                }
-            }
-        }
-    })
-}
-
-const postAchievment=async({nameOfAchievemnt,yearOfAcheivment,UserId})=>{
-    return prisma.achievment.createMany({
-        data:{
-            userId:parseInt(UserId),
-            name:nameOfAchievemnt || null,
-            Year:yearOfAcheivment ? new Date(yearOfAcheivment):null
-        }
-    })
+async function findUserByIdAndUpdate (id,url){
+return prisma.user.update({
+  where:{id:id},
+  data:{
+    profileImage:url
+  }
+})
 }
 module.exports = {
-    postAchievment,
+  postAchievment,
   getUserDetailsWithExtras,
   createEducation,
   createHeight,
   createdUserDetails,
   updateUserIsProfileCompleted,
-  gettingUserDetailWithHeightAndEducation
+  gettingUserDetailWithAchievmentHeightAndEducation,
+  findUserByIdAndUpdate,
 };

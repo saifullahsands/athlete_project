@@ -38,9 +38,19 @@
    }
    return res.status(response.status).json(response)
  }
+
+ function validationError(res,message="Validation Error"){
+   const response={
+      success:false,
+      status:403,
+      message
+   }
+   return res.status(response.status).json(response)
+ }
  module.exports={
     Errorhandler,
     okResponse,
     BadRequestError,
-    unAuthorized
+    unAuthorized,
+    validationError
  }
