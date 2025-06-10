@@ -1,5 +1,5 @@
 const prisma = require("../lib/prismaClient");
-
+const { pagination } = require("../utils/index");
 const createCoachDetails = async ({
   first_name,
   last_name,
@@ -73,10 +73,56 @@ const uploadProfileImage = async (userId, url, about) => {
   });
 };
 
+const allAthelete = async (req) => {
+  const { skip, perPage } = await pagination(req);
+  let where = {
+    isProfileComplete: true,
+  };
+  console.log(req.user.id, "ID");
+  if (req.user.role == "ATHELETE") {
+    where = {
+      ...where,
+      role: "COACH",
+    };
+  } else {
+    where = {
+      ...where,
+      role: "ATHELETE",
+      likeRecieved: {
+        none: {
+          likedById: req.user.id,
+        },
+      },
+    };
+  }
+  console.log(where, "WHERE");
+  return await prisma.user.findMany({
+    skip: skip,
+    take: perPage,
+    where,
+    select: {
+      role: true,
+      about: true,
+      profileImage: true,
+      id: true,
+      user_details: {
+        select: {
+          first_name: true,
+          last_name: true,
+          city: true,
+          state: true,
+          DOB: true,
+          gender: true,
+        },
+      },
+    },
+  });
+};
 module.exports = {
   createCoachDetails,
   CoachUpdateDetail,
   postWorkExperience,
   createCertificateImages,
   uploadProfileImage,
+  allAthelete,
 };

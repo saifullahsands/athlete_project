@@ -82,7 +82,7 @@ const verifyOtp = async (req, res, next) => {
     if (verifyOtp.otp_type === "SIGNUP_VERIFICATION") {
       const existingUser = await findUserByEmail(email);
       if (!existingUser) {
-        const user = await createUser({ email, hashPassword, role });
+        const user = await createUser({ email, password: hashPassword, role });
         await deleteOtp(verifyOtp.id);
         return okResponse(res, 200, "user is verified successfully", user);
       } else if (!existingUser.isVerified) {
@@ -151,16 +151,16 @@ const verifyOtpAndsetNewPassword = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    let user = await findUserByEmail(email);
+    const { email, password, role } = req.body;
+    let user = await findUserByEmail(email, role);
     if (!user) {
-      return BadRequestError(res, "user is not exist !! ");
+      return BadRequestError(res, "invalid credentials");
     }
     const matchedPassword = await ComparePassword(password, user.password);
     if (!matchedPassword) {
-      BadRequestError(res, "invalid credientials");
+      return BadRequestError(res, "invalid credientials");
     }
-    const token = await generateToken(user.id);
+    const token = generateToken(user.id);
     okResponse(res, 200, "user Logged in successfully ", user, token);
   } catch (error) {
     console.log("error in login :: ", error.message);

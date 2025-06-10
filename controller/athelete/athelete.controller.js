@@ -1,5 +1,9 @@
 const prisma = require("../../lib/prismaClient");
-const { okResponse, BadRequestError } = require("../../utils/index");
+const {
+  okResponse,
+  BadRequestError,
+  pagination,
+} = require("../../utils/index");
 const {
   createEducation,
   createHeight,
@@ -11,11 +15,19 @@ const {
 const { handleS3Upload } = require("../../utils/continous/handles3Upload");
 const { v4: uuidv4 } = require("uuid");
 
-
 const atheleteDetails = async (req, res, next) => {
   try {
     const userId = req.user.id;
-   
+
+    if (!req.file) {
+      return BadRequestError(res, "profile Image is required");
+    }
+    const folderName = "athlincs";
+    const file = req.file;
+    const fileName = `${uuidv4()}_profile_${Date.now()}_${file.originalname}`;
+    const uploadResult = await handleS3Upload(fileName, file, folderName);
+    await findUserByIdAndUpdate(userId, uploadResult);
+
     const {
       achievements,
       first_name,
@@ -57,16 +69,6 @@ const atheleteDetails = async (req, res, next) => {
       userId,
     });
 
-    if (!req.file) {
-      return BadRequestError(res, "profile Image is required");
-    }
-
-    const folderName = "athlincs";
-    const file = req.file;
-    const fileName = `${uuidv4()}_profile_${Date.now()}_${file.originalname}`;
-    const uploadResult = await handleS3Upload(fileName, file, folderName);
-    await findUserByIdAndUpdate(userId, uploadResult);
-
     await createHeight({
       ft: ft,
       inches: inches,
@@ -94,13 +96,15 @@ const atheleteDetails = async (req, res, next) => {
     }
 
     await updateUserIsProfileCompleted(userId, about);
-    okResponse(res, 200, "user details filled successfully");
+    okResponse(res, 200, "athelete details insert  successfully");
   } catch (error) {
     console.log(`error in fill user details :: ${error.message}`);
     next(error);
   }
 };
 
+
 module.exports = {
   atheleteDetails,
+  
 };

@@ -16,7 +16,7 @@ const createdUserDetails = async ({
   position,
   userId,
 }) => {
-  return prisma.user_Details.create({
+  return await prisma.user_Details.create({
     data: {
       first_name,
       last_name,
@@ -129,6 +129,11 @@ return prisma.user.update({
   }
 })
 }
+
+
+
+
+
 module.exports = {
   postAchievment,
   getUserDetailsWithExtras,

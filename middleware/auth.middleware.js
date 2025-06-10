@@ -37,8 +37,9 @@ const verifyRole = (role) => {
   try {
     return (req, res, next) => {
       if (!req.user || req.user.role !== role) {
-        throw new Error(`only this ${role} can access it `);
+        return BadRequestError(res, `this routes can only ${role} can access`);
       }
+
       next();
     };
   } catch (error) {

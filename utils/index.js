@@ -3,7 +3,7 @@ const { okResponse, Errorhandler,BadRequestError,validationError, unAuthorized }
 const { smtpServer } = require("./continous/sendEmail")
 const { HashingPassword, ComparePassword } = require("./helper/bcryptPassword")
 const { generateToken } = require("./helper/generateToken")
-
+const { pagination}=require("./helper/pagination")
 
 module.exports = {
     generateOtp,
@@ -15,5 +15,6 @@ module.exports = {
     generateToken,
     BadRequestError,
     validationError, 
-    unAuthorized
+    unAuthorized,
+    pagination
 }

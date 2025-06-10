@@ -29,10 +29,11 @@ const createOtp = async ({ email, otp, otpType }) => {
   });
 };
 
-const findUserByEmail = async (email) => {
+const findUserByEmail = async (email,role) => {
   return prisma.user.findUnique({
     where: {
       email,
+      role
     },
   });
 };

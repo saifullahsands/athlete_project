@@ -38,11 +38,14 @@ model User {
   isVerified              Boolean            @default(false)
   isProfileComplete       Boolean            @default(false)
   user_details            User_Details?      @relation("UserToDetails")
-  sport                   Sport[]
+  sportId                 Int?
+  sports                  Sport?             @relation(fields: [sportId], references: [id])
   achievment              achievment[]       @relation("UserAchievment")
   certificate             CertificateImage[] @relation("CertificateImage")
   coaching_specialization String?
   coaching_experience     Int?
+  likeRecieved            feedLike[]         @relation("LikesRecieved")
+  likeGiven               feedLike[]         @relation("LikesGiven")
 }
 
 model CertificateImage {
@@ -109,8 +112,15 @@ model Education {
 }
 
 model Sport {
-  id     Int    @id @default(autoincrement())
-  name   String
-  userId Int
-  user   User?  @relation(fields: [userId], references: [id])
+  id   Int    @id @default(autoincrement())
+  name String
+  user User[]
+}
+
+model feedLike {
+  id          Int  @id @default(autoincrement())
+  likedUserId Int
+  likedById   Int
+  likeUser    User @relation(references: [id], fields: [likedUserId], name: "LikesRecieved")
+  likeBy      User @relation(references: [id], fields: [likedById], name: "LikesGiven")
 }

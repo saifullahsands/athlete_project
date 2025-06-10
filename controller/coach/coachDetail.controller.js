@@ -4,9 +4,14 @@ const {
   createCertificateImages,
   uploadProfileImage,
   postWorkExperience,
+  
 } = require("../../services/coachDetail.service");
 const { handleS3Upload } = require("../../utils/continous/handles3Upload");
-const { BadRequestError, okResponse } = require("../../utils/index");
+const {
+  BadRequestError,
+  okResponse,
+  
+} = require("../../utils/index");
 const { v4: uuidv4 } = require("uuid");
 
 const CoachDetails = async (req, res, next) => {
@@ -25,7 +30,7 @@ const CoachDetails = async (req, res, next) => {
       coaching_specialization,
       coaching_experience,
       work_experience,
-    about
+      about,
     } = req.body;
 
     const profileImage = req.files?.profileImage?.[0];
@@ -40,7 +45,7 @@ const CoachDetails = async (req, res, next) => {
       profileImage,
       folderName
     );
-    await uploadProfileImage(userId, profileImageUrl,about);
+    await uploadProfileImage(userId, profileImageUrl, about);
 
     const certificatImage = req.files?.certificateImage;
     if (!certificatImage) {
@@ -58,7 +63,7 @@ const CoachDetails = async (req, res, next) => {
     await createCoachDetails({
       first_name,
       last_name,
-      DOB:new Date(DOB),
+      DOB: new Date(DOB),
       gender,
       address,
       city,
@@ -72,7 +77,7 @@ const CoachDetails = async (req, res, next) => {
       coaching_specialization,
       coaching_experience,
     });
-    
+
     await Promise.all(
       work_experience.map(async ({ name, year }) => {
         await postWorkExperience(userId, { name, year });
@@ -86,6 +91,8 @@ const CoachDetails = async (req, res, next) => {
   }
 };
 
+
 module.exports = {
   CoachDetails,
+ 
 };
