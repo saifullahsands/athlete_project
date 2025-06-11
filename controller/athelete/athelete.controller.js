@@ -104,7 +104,39 @@ const atheleteDetails = async (req, res, next) => {
 };
 
 
+const getAllCoaches=async(req,res,next)=>{
+  try{
+    const allCoaches=await prisma.user.findMany({
+      where:{
+        NOT:{
+          role:req.user.role
+        }
+          },
+      select:{
+        email:true,
+        profileImage:true,
+        user_details:{
+          select:{
+            first_name:true,
+            last_name:true,
+            state:true,
+            city:true,
+            gender:true,
+            
+          }
+        }
+      }
+    })
+    okResponse(res,200,"get all coaches",allCoaches)
+
+  }catch(error){
+    console.log(`error in get All Coaches :: ${error.message}`)
+    next(error)
+  }
+}
+
+
 module.exports = {
   atheleteDetails,
-  
+  getAllCoaches
 };

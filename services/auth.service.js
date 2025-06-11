@@ -29,11 +29,11 @@ const createOtp = async ({ email, otp, otpType }) => {
   });
 };
 
-const findUserByEmail = async (email,role) => {
+const findUserByEmail = async (email, role) => {
   return prisma.user.findUnique({
     where: {
       email,
-      role
+      role,
     },
   });
 };
@@ -65,18 +65,64 @@ const findUserById = async (id) => {
     where: { id: parseInt(id) },
   });
 };
-const updateUserisVerified=async(email)=>{
-     return  prisma.user.update({
-                    where: {
-                        email
-                    },
-                    data: {
-                        isVerified: true
-                    }
-                })
-}
+const updateUserisVerified = async (email) => {
+  return prisma.user.update({
+    where: {
+      email,
+    },
+    data: {
+      isVerified: true,
+    },
+  });
+};
+
+const getMyProfile = async (req) => {
+  const { type = "about" } = req.query;
+
+  if (type == "about") {
+    return await prisma.user.findUnique({
+      where: {
+        id: req.user.id,
+        isProfileComplete: true,
+      },
+      select: {
+        email: true,
+        profileImage: true,
+        role: true,
+        about: true,
+        achievment: true,
+        certificate: {
+          select: {
+            urls: true,
+          },
+        },
+
+        user_details: {
+          include: {
+            education: true,
+            height: true,
+          },
+        },
+      },
+    });
+  } else if (type == "image") {
+    return await prisma.media.findMany({
+      where: {
+        userId: req.user.id,
+        type: "IMAGE",
+      },
+    });
+  } else if (type == "video") {
+    return await prisma.media.findMany({
+      where: {
+        userId: req.user.id,
+        type: "VIDEO",
+      },
+    });
+  }
+};
 module.exports = {
-    updateUserisVerified,
+  updateUserisVerified,
   createUser,
   findUserByEmail,
   findOtp,
@@ -84,4 +130,5 @@ module.exports = {
   updateUserPassword,
   deleteOtp,
   findUserById,
+  getMyProfile,
 };

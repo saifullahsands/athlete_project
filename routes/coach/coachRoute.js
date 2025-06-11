@@ -10,10 +10,9 @@ const CoachvalidateSchema = require("../../validations/coachValidition");
 const upload = require("../../middleware/multer.middleware");
 
 const {
-
- getAllNotLike,
- LikePost,
- profilesLikedByMe
+  getAllNotLike,
+  LikedPost,
+  profilesLikedByMe,
 } = require("../../controller/like.controller");
 
 const coachRoute = require("express").Router();
@@ -37,13 +36,7 @@ coachRoute.get(
   getAllNotLike
 );
 
-coachRoute.post(
-  "/like/:id",
-  authenticated,
-  verifyRole("COACH"),
-  LikePost
-);
-
+coachRoute.post("/like/:id", authenticated, verifyRole("COACH"), LikedPost);
 
 coachRoute.get(
   "/liked-athletes",

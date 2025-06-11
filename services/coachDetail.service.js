@@ -1,5 +1,5 @@
 const prisma = require("../lib/prismaClient");
-const { pagination } = require("../utils/index");
+const { pagination, BadRequestError } = require("../utils/index");
 const createCoachDetails = async ({
   first_name,
   last_name,
@@ -118,6 +118,11 @@ const allAthelete = async (req) => {
     },
   });
 };
+
+
+ 
+
+ 
 module.exports = {
   createCoachDetails,
   CoachUpdateDetail,
@@ -125,4 +130,5 @@ module.exports = {
   createCertificateImages,
   uploadProfileImage,
   allAthelete,
+
 };

@@ -1,4 +1,5 @@
 const prisma = require("../lib/prismaClient");
+const { getAgeFromDob } = require("../utils/index");
 const {
   okResponse,
   smtpServer,
@@ -15,6 +16,7 @@ const {
   deleteOtp,
   createUser,
   updateUserisVerified,
+  getMyProfile,
 } = require("../services/auth.service");
 const { BadRequestError } = require("../utils/continous/handleError");
 //SIGNUP
@@ -167,6 +169,21 @@ const login = async (req, res, next) => {
     next(error);
   }
 };
+
+const getAlldetailsmyProfile = async (req, res, next) => {
+  try {
+    const detail = await getMyProfile(req);
+
+    if (detail?.user_details?.DOB) {
+      const age = getAgeFromDob(detail?.user_details?.DOB);
+      detail.user_details.age = age;
+    }
+    okResponse(res, 200, "", detail);
+  } catch (error) {
+    console.log(`error in get All details in my profile ${error.message}`);
+    next(error);
+  }
+};
 module.exports = {
   registerUser,
   resendOtp,
@@ -174,4 +191,5 @@ module.exports = {
   SendOtpforgetPassword,
   login,
   verifyOtpAndsetNewPassword,
+  getAlldetailsmyProfile,
 };

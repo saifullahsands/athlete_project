@@ -34,9 +34,14 @@ const CoachDetails = async (req, res, next) => {
     } = req.body;
 
     const profileImage = req.files?.profileImage?.[0];
-
+    
     if (!profileImage) {
       return BadRequestError(res, "profile Image is required");
+    }
+
+    const allowedProfileAndCertificatetype=["image/png","image/jpg",'image/jpeg']
+    if(!allowedProfileAndCertificatetype.includes(profileImage.mimetype)){
+      return BadRequestError(res,"only image is allowed ")
     }
     const folderName = "athlincs";
     const profileImagefileName = `${uuidv4()}_${profileImage.originalname}`;
@@ -51,7 +56,11 @@ const CoachDetails = async (req, res, next) => {
     if (!certificatImage) {
       return BadRequestError(res, "certificate Image is required");
     }
-
+     for(const file of certificatImage){
+      if(!allowedProfileAndCertificatetype.includes(file.mimetype)){
+        return BadRequestError(res,"certificate only accept  images ")
+      }
+     }
     await Promise.all(
       certificatImage.map(async (file) => {
         const fileName = `${uuidv4()}_${file.originalname}`;

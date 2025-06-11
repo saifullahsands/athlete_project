@@ -2,7 +2,7 @@ const prisma = require("../lib/prismaClient");
 const { okResponse, BadRequestError } = require("../utils");
 const { allAthelete } = require("../services/coachDetail.service");
 
-const LikePost = async (req, res, next) => {
+const LikedPost = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const likeuserid = req.params.id;
@@ -75,15 +75,40 @@ const profilesLikedByMe = async (req, res, next) => {
   } catch (error) {
     console.log(error, "Error");
     return res.status(500).json(error);
+  
   }
 };
 
-
+const CoachesLikedMyProfile=async(req,res,next)=>{
+  try {
+    const wholikeme=await prisma.feedLike.findMany({
+      where:{
+        likedUserId:req.user.id
+      },
+      include:{
+        likeBy:{
+          select:{
+            profileImage:true,
+            id:true,
+            email:true
+          }
+        }
+        
+      }
+      
+    })
+    okResponse(res,200,"get all coaches liked my profiles",wholikeme)
+  } catch (error) {
+    console.log(`error in who have liked me :: ${error.message}`)
+    next(error)
+  }
+}
 
 
 
 module.exports = {
-  LikePost,
+  LikedPost,
   getAllNotLike,
   profilesLikedByMe,
+ CoachesLikedMyProfile
 };

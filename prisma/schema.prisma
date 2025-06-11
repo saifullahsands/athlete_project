@@ -23,6 +23,7 @@ enum USERROLE {
   COACH
 }
 
+
 enum genderEnum {
   FEMALE
   MALE
@@ -46,6 +47,8 @@ model User {
   coaching_experience     Int?
   likeRecieved            feedLike[]         @relation("LikesRecieved")
   likeGiven               feedLike[]         @relation("LikesGiven")
+  
+  media                   media[]
 }
 
 model CertificateImage {
@@ -123,4 +126,18 @@ model feedLike {
   likedById   Int
   likeUser    User @relation(references: [id], fields: [likedUserId], name: "LikesRecieved")
   likeBy      User @relation(references: [id], fields: [likedById], name: "LikesGiven")
+}
+
+model media {
+  id     Int  @id @default(autoincrement())
+  userId Int?
+  User   User? @relation(fields: [userId], references: [id])
+  urls  String
+  type  FILETYPEENUM
+  createdAt DateTime @default(now())
+}
+
+enum FILETYPEENUM {
+  IMAGE
+  VIDEO
 }
