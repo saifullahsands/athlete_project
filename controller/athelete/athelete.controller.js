@@ -11,6 +11,7 @@ const {
   updateUserIsProfileCompleted,
   postAchievment,
   findUserByIdAndUpdate,
+  creatSportsList,
 } = require("../../services/atheleteDetail.service");
 const { handleS3Upload } = require("../../utils/continous/handles3Upload");
 const { v4: uuidv4 } = require("uuid");
@@ -48,8 +49,7 @@ const atheleteDetails = async (req, res, next) => {
       about,
       coachName,
       currentTeam,
-      previousTeam,
-      position,
+      sportData,
     } = req.body;
 
     const userDetailing = await createdUserDetails({
@@ -64,10 +64,10 @@ const atheleteDetails = async (req, res, next) => {
       emailAddress,
       coachName,
       currentTeam,
-      previousTeam,
-      position,
       userId,
     });
+
+    console.log("SPORT DATAAAA :: ", sportData);
 
     await createHeight({
       ft: ft,
@@ -75,7 +75,7 @@ const atheleteDetails = async (req, res, next) => {
       weight: weight,
       userDetailId: userDetailing.userId,
     });
-
+    await creatSportsList(userId, sportData);
     await createEducation({
       school_name: school_name,
       GPA: GPA,
@@ -103,40 +103,97 @@ const atheleteDetails = async (req, res, next) => {
   }
 };
 
-
-const getAllCoaches=async(req,res,next)=>{
-  try{
-    const allCoaches=await prisma.user.findMany({
-      where:{
-        NOT:{
-          role:req.user.role
-        }
+const getAllCoaches = async (req, res, next) => {
+  try {
+    const { skip, perPage, page } = await pagination(req);
+    const [caoches, total] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          NOT: {
+            role: req.user.role,
           },
-      select:{
-        email:true,
-        profileImage:true,
-        user_details:{
-          select:{
-            first_name:true,
-            last_name:true,
-            state:true,
-            city:true,
-            gender:true,
-            
-          }
-        }
-      }
-    })
-    okResponse(res,200,"get all coaches",allCoaches)
+          isProfileComplete: true,
+        },
+        skip,
+        take: perPage,
 
-  }catch(error){
-    console.log(`error in get All Coaches :: ${error.message}`)
-    next(error)
+        select: {
+          id: true,
+          profileImage: true,
+          user_details: {
+            select: {
+              first_name: true,
+              last_name: true,
+              state: true,
+              city: true,
+              gender: true,
+            },
+          },
+        },
+      }),
+      prisma.user.count({
+        where: {
+          NOT: {
+            role: req.user.role,
+          },
+          isProfileComplete: true,
+        },
+      }),
+    ]);
+    okResponse(res, 200, "get all coaches", {
+      caoches,
+      pagination: {
+        total: total,
+        totalPage: Math.ceil(total / perPage),
+        hasNext: page < Math.ceil(total / perPage),
+      },
+    });
+  } catch (error) {
+    console.log(`error in get All Coaches :: ${error.message}`);
+    next(error);
   }
-}
+};
 
+const viewCoachProfile = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    const findCoachDetails = await prisma.user.findUnique({
+      where: {
+        id: parseInt(userId),
+        role:"COACH"
+      },
+      select: {
+        role: true,
+        profileImage: true,
+        achievment: {
+          select: {
+            name: true,
+            year: true,
+          },
+        },
+        certificate: {
+          select: {
+            urls: true,
+          },
+        },
+        about: true,
+        user_details: true,
+      },
+    });
 
+    okResponse(
+      res,
+      200,
+      "get coach profile successfully :: ",
+      findCoachDetails
+    );
+  } catch (error) {
+    console.log(`error in view Coach Profile :: ${error.message}`);
+    next(error);
+  }
+};
 module.exports = {
   atheleteDetails,
-  getAllCoaches
+  getAllCoaches,
+  viewCoachProfile,
 };

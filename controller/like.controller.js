@@ -48,8 +48,6 @@ const getAllNotLike = async (req, res, next) => {
   }
 };
 
-
-
 const profilesLikedByMe = async (req, res, next) => {
   try {
     const alllike = await prisma.feedLike.findMany({
@@ -75,40 +73,40 @@ const profilesLikedByMe = async (req, res, next) => {
   } catch (error) {
     console.log(error, "Error");
     return res.status(500).json(error);
-  
   }
 };
 
-const CoachesLikedMyProfile=async(req,res,next)=>{
+const CoachesLikedMyProfile = async (req, res, next) => {
   try {
-    const wholikeme=await prisma.feedLike.findMany({
-      where:{
-        likedUserId:req.user.id
+    const wholikeme = await prisma.feedLike.findMany({
+      where: {
+        likedUserId: req.user.id,
       },
-      include:{
-        likeBy:{
-          select:{
-            profileImage:true,
-            id:true,
-            email:true
-          }
-        }
-        
-      }
-      
-    })
-    okResponse(res,200,"get all coaches liked my profiles",wholikeme)
+      include: {
+        likeBy: {
+          select: {
+            likeGiven: false,
+            likeRecieved: false,
+
+            profileImage: true,
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    const cleanData = wholikeme.map((like) => like.likeBy);
+    okResponse(res, 200, "get all coaches liked my profiles", cleanData);
   } catch (error) {
-    console.log(`error in who have liked me :: ${error.message}`)
-    next(error)
+    console.log(`error in who have liked me :: ${error.message}`);
+    next(error);
   }
-}
-
-
+};
 
 module.exports = {
   LikedPost,
   getAllNotLike,
   profilesLikedByMe,
- CoachesLikedMyProfile
+  CoachesLikedMyProfile,
 };

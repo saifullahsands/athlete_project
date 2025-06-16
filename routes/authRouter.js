@@ -1,5 +1,6 @@
 const authRouter = require("express").Router();
 const authController = require("../controller/auth.controller");
+const { getAllsport } = require("../controller/sport.controller");
 
 const { authenticated } = require("../middleware/auth.middleware");
 
@@ -16,9 +17,6 @@ authRouter.put(
 );
 authRouter.post("/login", authController.login);
 
-authRouter.get(
-  "/my-profile",
-  authenticated,
-  authController.getAlldetailsmyProfile
-);
+
+authRouter.get("/get-sport",authenticated,getAllsport)
 module.exports = authRouter;

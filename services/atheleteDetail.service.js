@@ -12,8 +12,7 @@ const createdUserDetails = async ({
   emailAddress,
   coachName,
   currentTeam,
-  previousTeam,
-  position,
+ 
   userId,
 }) => {
   return await prisma.user_Details.create({
@@ -28,9 +27,7 @@ const createdUserDetails = async ({
       phone,
       emailAddress,
       coachName,
-      currentTeam ,
-      previousTeam ,
-      position,
+      currentTeam,
       userId: parseInt(userId),
     },
   });
@@ -114,7 +111,7 @@ const postAchievment = async ({
     data: {
       userId: parseInt(UserId),
       name: nameOfAchievemnt || null,
-      Year: yearOfAcheivment ? new Date(yearOfAcheivment) : null,
+      year: parseInt(yearOfAcheivment) || null,
     },
   });
 };
@@ -131,7 +128,16 @@ return prisma.user.update({
 }
 
 
-
+const creatSportsList = async (userId, sportData) => {
+  return prisma.userSports.createMany({
+    data: sportData.map((sport) => ({
+      userId: parseInt(userId),
+      sportId: parseInt(sport.sportId),
+      position:sport.position
+    })),
+    skipDuplicates: true,
+  });
+};
 
 
 module.exports = {
@@ -143,4 +149,5 @@ module.exports = {
   updateUserIsProfileCompleted,
   gettingUserDetailWithAchievmentHeightAndEducation,
   findUserByIdAndUpdate,
+  creatSportsList
 };

@@ -2,6 +2,7 @@ const athleteRoute = require("express").Router();
 const {
   atheleteDetails,
   getAllCoaches,
+  viewCoachProfile,
 } = require("../../controller/athelete/athelete.controller");
 const {
   authenticated,
@@ -12,6 +13,7 @@ const athletevalidateSchema = require("../../validations/athleteDetails");
 const upload = require("../../middleware/multer.middleware");
 const { CoachesLikedMyProfile } = require("../../controller/like.controller");
 const { uploadImageAndVideo } = require("../../controller/media.controller");
+const { searchingAthelete } = require("../../controller/search.controller");
 
 athleteRoute.post(
   "/detail",
@@ -30,7 +32,7 @@ athleteRoute.get(
 );
 
 athleteRoute.get(
-  "/all-coaches-liked-profile",
+  "/coaches-liked-my-profile",
   authenticated,
   verifyRole("ATHELETE"),
   CoachesLikedMyProfile
@@ -42,5 +44,19 @@ athleteRoute.post(
   verifyRole("ATHELETE"),
   upload.array("imag"),
   uploadImageAndVideo
+);
+
+athleteRoute.get(
+  "/search-coach",
+  authenticated,
+  verifyRole("ATHELETE"),
+  searchingAthelete
+);
+
+athleteRoute.get(
+  "/view-coach-profile",
+  authenticated,
+  verifyRole("ATHELETE"),
+  viewCoachProfile
 );
 module.exports = athleteRoute;

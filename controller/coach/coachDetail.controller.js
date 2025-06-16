@@ -4,14 +4,11 @@ const {
   createCertificateImages,
   uploadProfileImage,
   postWorkExperience,
-  
+  creatSportsList,
+getAthleteProfile
 } = require("../../services/coachDetail.service");
 const { handleS3Upload } = require("../../utils/continous/handles3Upload");
-const {
-  BadRequestError,
-  okResponse,
-  
-} = require("../../utils/index");
+const { BadRequestError, okResponse } = require("../../utils/index");
 const { v4: uuidv4 } = require("uuid");
 
 const CoachDetails = async (req, res, next) => {
@@ -27,21 +24,25 @@ const CoachDetails = async (req, res, next) => {
       state,
       emailAddress,
       phone,
-      coaching_specialization,
       coaching_experience,
       work_experience,
       about,
+      sportIds,
     } = req.body;
 
     const profileImage = req.files?.profileImage?.[0];
-    
+
     if (!profileImage) {
       return BadRequestError(res, "profile Image is required");
     }
 
-    const allowedProfileAndCertificatetype=["image/png","image/jpg",'image/jpeg']
-    if(!allowedProfileAndCertificatetype.includes(profileImage.mimetype)){
-      return BadRequestError(res,"only image is allowed ")
+    const allowedProfileAndCertificatetype = [
+      "image/png",
+      "image/jpg",
+      "image/jpeg",
+    ];
+    if (!allowedProfileAndCertificatetype.includes(profileImage.mimetype)) {
+      return BadRequestError(res, "only image is allowed ");
     }
     const folderName = "athlincs";
     const profileImagefileName = `${uuidv4()}_${profileImage.originalname}`;
@@ -56,11 +57,11 @@ const CoachDetails = async (req, res, next) => {
     if (!certificatImage) {
       return BadRequestError(res, "certificate Image is required");
     }
-     for(const file of certificatImage){
-      if(!allowedProfileAndCertificatetype.includes(file.mimetype)){
-        return BadRequestError(res,"certificate only accept  images ")
+    for (const file of certificatImage) {
+      if (!allowedProfileAndCertificatetype.includes(file.mimetype)) {
+        return BadRequestError(res, "certificate only accept  images ");
       }
-     }
+    }
     await Promise.all(
       certificatImage.map(async (file) => {
         const fileName = `${uuidv4()}_${file.originalname}`;
@@ -83,10 +84,9 @@ const CoachDetails = async (req, res, next) => {
     });
 
     await CoachUpdateDetail(userId, {
-      coaching_specialization,
       coaching_experience,
     });
-
+    await creatSportsList(userId, sportIds);
     await Promise.all(
       work_experience.map(async ({ name, year }) => {
         await postWorkExperience(userId, { name, year });
@@ -100,8 +100,17 @@ const CoachDetails = async (req, res, next) => {
   }
 };
 
+const getAlldetailsAthleteProfile = async (req, res, next) => {
+  try {
+    const detail = await getAthleteProfile(req);
 
+    okResponse(res, 200, "", detail);
+  } catch (error) {
+    console.log(`error in get All details in my profile ${error.message}`);
+    next(error);
+  }
+};
 module.exports = {
   CoachDetails,
- 
+  getAlldetailsAthleteProfile,
 };

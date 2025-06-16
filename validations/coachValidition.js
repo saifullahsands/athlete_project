@@ -1,4 +1,3 @@
-
 const joi = require("joi");
 
 const CoachvalidateSchema = joi.object({
@@ -39,38 +38,46 @@ const CoachvalidateSchema = joi.object({
       "string.length": "phone number must be 11 digits",
       "string.pattern.base": "phone number contain only  digits",
     }),
-    coaching_specialization:joi.string().required().valid("FOOTBALL","CRICKET")
-    .messages({
-      'any.required':"coaching Specialization is required",
-      'any.only':"coaching specialization must be either CRICKET and FOOTBALL",
-
-    }),
-    coaching_experience:joi.number().required().positive().min(1).messages({
-      'any.required':"experience is required",
-      'number.positive':"experience is must be a positive",
-      'number.min':"experience must be a 1",
-    }),
+    coaching_experience: joi
+      .number()
+      .required()
+      .positive()
+      .min(1)
+      .max(50)
+      .messages({
+        "any.required": "experience is required",
+        "number.positive": "experience is must be a positive",
+        "number.min": "experience must be a 1",
+        "number.max": "experience not above 50 number ",
+      }),
     about: joi.string().required().trim().messages({
       "any.required": "about is required",
     }),
-      work_experience: joi
+    work_experience: joi
       .array()
       .items(
         joi.object({
-          name: joi.string().required()
-          .messages({
-            'any.required':"achievments name is required",
-
+          name: joi.string().required().messages({
+            "any.required": "achievments name is required",
           }),
-          year: joi.date().required().messages({
-            'any.required':"achievment year is required",
-            "date.base":"achievment year must be a date"
+          year: joi.number().integer().max(1).max(50).required().messages({
+            "any.required": "work experience year is required",
+            "number.base": "work experience year is must be a number",
+            "number.min": "work experience year must be a 1",
+            "number.max": "work experince year not above 50 year",
           }),
         })
-      ).required().messages({
-        'any.required':"work experience is required"
-      })
-})
+      )
+      .required()
+      .messages({
+        "any.required": "work experience is required",
+      }),
+    sportIds: joi
+      .array()
+      .items(joi.number().integer().positive())
+      .min(1)
+      .required(),
+  }),
 });
 
 module.exports = CoachvalidateSchema;

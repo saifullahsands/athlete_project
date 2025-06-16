@@ -1,5 +1,6 @@
 const {
   CoachDetails,
+  getAlldetailsAthleteProfile,
 } = require("../../controller/coach/coachDetail.controller");
 const {
   authenticated,
@@ -14,6 +15,7 @@ const {
   LikedPost,
   profilesLikedByMe,
 } = require("../../controller/like.controller");
+const { searchingAthelete } = require("../../controller/search.controller");
 
 const coachRoute = require("express").Router();
 
@@ -45,4 +47,17 @@ coachRoute.get(
   profilesLikedByMe
 );
 
+coachRoute.get(
+  "/search-athlete",
+  authenticated,
+  verifyRole("COACH"),
+  searchingAthelete
+);
+
+coachRoute.get(
+  "/get-athelete-profile",
+  authenticated,
+  verifyRole("COACH"),
+  getAlldetailsAthleteProfile
+);
 module.exports = coachRoute;

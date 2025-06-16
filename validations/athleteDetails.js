@@ -1,5 +1,6 @@
 const joi = require("joi");
 
+const currentYear = new Date().getFullYear();
 const athletevalidateSchema = joi.object({
   query: joi.object().empty(),
   params: joi.object().empty(),
@@ -69,19 +70,49 @@ const athletevalidateSchema = joi.object({
     about: joi.string().required().trim().messages({
       "any.required": "about is required",
     }),
-    previousTeam: joi.string().optional(),
     currentTeam: joi.string().optional(),
     coachName: joi.string().optional(),
-    position:joi.string().optional(),
+
     achievements: joi
       .array()
       .items(
         joi.object({
-          name: joi.string().optional(),
-          year: joi.date().optional(),
+          name: joi.string().required(),
+          year: joi
+            .number()
+            .integer()
+            .max(currentYear)
+            .min(1910)
+            .optional()
+            .messages({
+              "number.base": " achievment year must be a number",
+              "number.integer": "achievment year must be a whole number",
+              "number.min": "achievment year must be after 1910",
+              "number.max": `achievment cannot b greater than ${currentYear}`,
+            }),
         })
       )
       .optional(),
+    sportData: joi
+      .array()
+      .items(
+        joi.object({
+          sportId: joi.number().integer().positive().required().messages({
+            "any.required": "sportId is required",
+            "number.base": "sportId must be a number",
+          }),
+          position: joi.string().min(2).required().messages({
+            "any.required": "position is required",
+            "string.min": "position must be at least 2 characters",
+          }),
+        })
+      )
+      .min(1)
+      .required()
+      .messages({
+        "array.min": "at least one sport must be selected",
+        "any.required": "sportData is required",
+      }),
   }),
 });
 

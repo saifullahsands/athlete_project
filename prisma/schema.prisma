@@ -23,32 +23,33 @@ enum USERROLE {
   COACH
 }
 
-
 enum genderEnum {
   FEMALE
   MALE
 }
 
 model User {
-  id                      Int                @id @default(autoincrement())
-  role                    USERROLE
-  email                   String             @unique
-  password                String
-  profileImage            String?
-  about                   String?
-  isVerified              Boolean            @default(false)
-  isProfileComplete       Boolean            @default(false)
-  user_details            User_Details?      @relation("UserToDetails")
-  sportId                 Int?
-  sports                  Sport?             @relation(fields: [sportId], references: [id])
-  achievment              achievment[]       @relation("UserAchievment")
-  certificate             CertificateImage[] @relation("CertificateImage")
-  coaching_specialization String?
-  coaching_experience     Int?
-  likeRecieved            feedLike[]         @relation("LikesRecieved")
-  likeGiven               feedLike[]         @relation("LikesGiven")
-  
-  media                   media[]
+  id                Int           @id @default(autoincrement())
+  role              USERROLE
+  email             String        @unique
+  password          String
+  profileImage      String?
+  about             String?
+  isVerified        Boolean       @default(false)
+  isProfileComplete Boolean       @default(false)
+  user_details      User_Details? @relation("UserToDetails")
+
+  userSports          UserSports[]
+  achievment          achievment[]       @relation("UserAchievment")
+  certificate         CertificateImage[] @relation("CertificateImage")
+  coaching_experience Int?
+  likeRecieved        feedLike[]         @relation("LikesRecieved")
+  likeGiven           feedLike[]         @relation("LikesGiven")
+
+  media media[]
+
+  notification Notifications[]
+  devices      Devices[]
 }
 
 model CertificateImage {
@@ -62,8 +63,8 @@ model achievment {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(references: [id], fields: [userId], name: "UserAchievment")
-  name      String
-  Year      DateTime @db.Date
+  name      String?
+  year      Int?
   createdAt DateTime @default(now())
 }
 
@@ -90,10 +91,10 @@ model User_Details {
   phone        String
   emailAddress String
   education    Education? @relation("Educations")
-  position     String?
-  currentTeam  String?
-  previousTeam String?
-  coachName    String?
+
+  currentTeam String?
+
+  coachName String?
 }
 
 model Height {
@@ -117,7 +118,17 @@ model Education {
 model Sport {
   id   Int    @id @default(autoincrement())
   name String
-  user User[]
+
+  userSports UserSports[]
+}
+
+model UserSports {
+  id       Int     @id @default(autoincrement())
+  sportId  Int?
+  userId   Int?
+  position String?
+  user     User?   @relation(fields: [userId], references: [id])
+  sport    Sport?  @relation(fields: [sportId], references: [id])
 }
 
 model feedLike {
@@ -129,15 +140,40 @@ model feedLike {
 }
 
 model media {
-  id     Int  @id @default(autoincrement())
-  userId Int?
-  User   User? @relation(fields: [userId], references: [id])
-  urls  String
-  type  FILETYPEENUM
-  createdAt DateTime @default(now())
+  id        Int          @id @default(autoincrement())
+  userId    Int?
+  User      User?        @relation(fields: [userId], references: [id])
+  urls      String
+  type      FILETYPEENUM
+  createdAt DateTime     @default(now())
 }
 
 enum FILETYPEENUM {
   IMAGE
   VIDEO
+}
+
+model Devices {
+  id           Int    @id @default(autoincrement())
+  userId       Int
+  user         User   @relation(fields: [userId], references: [id])
+  fcmToken     String
+  access_token String
+}
+
+model Notifications {
+  id      Int              @id @default(autoincrement())
+  userId  Int
+  user    User             @relation(fields: [userId], references: [id])
+  title   String
+  message String
+  meta    Json?
+  type    NotificationType @default(GENERAL)
+
+  createdAt DateTime @default(now())
+}
+
+enum NotificationType {
+  GENERAL
+  LIKE
 }
